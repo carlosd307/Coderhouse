@@ -13,15 +13,12 @@
 -- Permite conocer cuántas unidades se vendieron y cuánto
 -- ingreso generó cada categoría.
 --
--- Se unen las tablas ventas, productos y categorias.
--- De esta manera se puede relacionar cada venta con el
--- producto vendido y con su categoría correspondiente.
+-- Se unen las tablas ventas, productos y categorias para
+-- relacionar cada venta con su producto y categoría.
 --
 -- Solo se muestran las categorías que superan
 -- los $100.000 de ingresos.
---
--- El filtro sobre el ingreso total se realiza mediante
--- HAVING porque se trata de un resultado agregado.
+-- El filtro de la suma se realiza mediante HAVING.
 
 SELECT
     cat.nombre AS categoria,
@@ -32,7 +29,9 @@ INNER JOIN productos AS p
     ON v.producto_id = p.producto_id
 INNER JOIN categorias AS cat
     ON p.categoria_id = cat.categoria_id
-GROUP BY cat.categoria_id, cat.nombre
+GROUP BY
+    cat.categoria_id,
+    cat.nombre
 HAVING SUM(v.cantidad * p.precio) > 100000
 ORDER BY ingreso_total DESC;
 
@@ -48,8 +47,6 @@ ORDER BY ingreso_total DESC;
 -- incluso aquellos que no tienen ventas asociadas.
 --
 -- COALESCE permite mostrar 0 en lugar de NULL.
--- La condición IS NULL identifica los clientes que no
--- tienen ninguna venta registrada.
 
 SELECT
     c.cliente_id,
@@ -74,11 +71,10 @@ WHERE v.venta_id IS NULL;
 -- SUM(cantidad) permite conocer cuántas unidades compró
 -- de cada producto.
 --
--- MAX(fecha_venta) permite obtener la última fecha en
--- la que el cliente realizó una compra de ese producto.
+-- MAX(fecha_venta) permite obtener la última transacción.
 --
--- Luego ROW_NUMBER() genera un ranking para cada cliente.
--- Finalmente se conserva únicamente la posición 1.
+-- ROW_NUMBER() genera un ranking para cada cliente y
+-- finalmente se conserva únicamente la posición 1.
 
 WITH compras_por_cliente AS (
 
