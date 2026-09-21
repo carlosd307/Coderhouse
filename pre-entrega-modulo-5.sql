@@ -15,8 +15,8 @@
 -- Tablas utilizadas: ventas, productos, categorias
 -- (mismo dataset del Módulo 4).
 --------------------------------------------------------
-
-
+ 
+ 
 --------------------------------------------------------
 -- 1. CTE ventas_mensuales
 --------------------------------------------------------
@@ -31,28 +31,28 @@
 --
 -- El ingreso de cada venta se calcula como
 -- cantidad * precio del producto.
-
+ 
 WITH ventas_mensuales AS (
-
+ 
     SELECT
         DATE_TRUNC('month', v.fecha_venta) AS mes,
         cat.nombre AS categoria,
         SUM(v.cantidad * p.precio) AS venta_total
-
+ 
     FROM ventas AS v
-
+ 
     INNER JOIN productos AS p
         ON v.producto_id = p.producto_id
-
+ 
     INNER JOIN categorias AS cat
         ON p.categoria_id = cat.categoria_id
-
+ 
     GROUP BY
         DATE_TRUNC('month', v.fecha_venta),
         cat.nombre
 ),
-
-
+ 
+ 
 --------------------------------------------------------
 -- 2. CTE metricas_ventana
 --------------------------------------------------------
@@ -75,33 +75,33 @@ WITH ventas_mensuales AS (
 --     poder comparar cada mes puntual contra su propio
 --     comportamiento habitual (misma granularidad:
 --     mes/categoría en ambos lados de la comparación).
-
+ 
 metricas_ventana AS (
-
+ 
     SELECT
         mes,
         categoria,
         venta_total,
-
+ 
         RANK() OVER (
             PARTITION BY mes
             ORDER BY venta_total DESC
         ) AS ranking_categoria,
-
+ 
         SUM(venta_total) OVER (
             PARTITION BY categoria
             ORDER BY mes
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) AS ventas_acumuladas,
-
+ 
         AVG(venta_total) OVER (
             PARTITION BY categoria
         ) AS promedio_historico
-
+ 
     FROM ventas_mensuales
 )
-
-
+ 
+ 
 --------------------------------------------------------
 -- 3. Reporte final
 --------------------------------------------------------
@@ -109,22 +109,22 @@ metricas_ventana AS (
 -- Compara la venta de cada mes/categoría contra el
 -- promedio histórico de esa misma categoría, para marcar
 -- si ese mes fue "Exitoso" o quedó "Bajo el promedio".
-
+ 
 SELECT
     mes,
     categoria,
     venta_total,
     ranking_categoria,
     ventas_acumuladas,
-
+ 
     CASE
         WHEN venta_total >= promedio_historico
             THEN 'Exitoso'
         ELSE 'Bajo el promedio'
     END AS comparativa
-
+ 
 FROM metricas_ventana
-
+ 
 ORDER BY
     mes,
     ranking_categoria;
